@@ -1,0 +1,18 @@
+# Binaries
+tenubah-agent
+tenubah-agent.exe
+dist/
+bin/
+
+# Go build artifacts
+*.out
+*.test
+*.prof
+
+# IDE
+.vscode/
+.DS_Store
+
+# Config local (no subir tokens)
+config.yaml
+*.local.yaml

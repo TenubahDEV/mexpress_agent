@@ -1,0 +1,9 @@
+job_name: "cliente_tenubah"
+instance_name: ""
+pushgateway_url: "https://push.tenubah.com"
+token: "REPLACE_ME"
+interval_seconds: 60
+
+labels:
+  customer: "cliente1"
+  env: "prod"
