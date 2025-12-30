@@ -57,3 +57,26 @@ jobs:
             dist/tenubah-agent-linux-amd64.sig
             dist/tenubah-agent-windows-amd64.exe
             dist/tenubah-agent-windows-amd64.exe.sig
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload binaries to S3
+        run: |
+          CLIENT="${{ secrets.TENUBAH_CLIENT }}"
+
+          aws s3 cp dist/tenubah-agent-linux-amd64 \
+            s3://install.tenubah.com/${CLIENT}/bin/tenubah-agent-linux-amd64
+
+          aws s3 cp dist/tenubah-agent-linux-amd64.sig \
+            s3://install.tenubah.com/${CLIENT}/bin/tenubah-agent-linux-amd64.sig
+
+          aws s3 cp dist/tenubah-agent-windows-amd64.exe \
+            s3://install.tenubah.com/${CLIENT}/bin/tenubah-agent-windows-amd64.exe
+
+          aws s3 cp dist/tenubah-agent-windows-amd64.exe.sig \
+            s3://install.tenubah.com/${CLIENT}/bin/tenubah-agent-windows-amd64.exe.sig
