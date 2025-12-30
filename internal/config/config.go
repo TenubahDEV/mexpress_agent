@@ -7,6 +7,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type AutoUpdateConfig struct {
+	Enabled            bool `yaml:"enabled"`
+	CheckIntervalHours int  `yaml:"check_interval_hours"`
+}
+
 type Config struct {
 	JobName         string            `yaml:"job_name"`
 	InstanceName    string            `yaml:"instance_name"`
@@ -14,6 +19,7 @@ type Config struct {
 	Token           string            `yaml:"token"`
 	IntervalSeconds int               `yaml:"interval_seconds"`
 	Labels          map[string]string `yaml:"labels"`
+	AutoUpdate      AutoUpdateConfig  `yaml:"auto_update"`
 }
 
 func Load(path string) (*Config, error) {
@@ -50,6 +56,9 @@ func Load(path string) (*Config, error) {
 	}
 	if c.Token == "" {
 		return nil, errors.New("token required")
+	}
+	if c.AutoUpdate.CheckIntervalHours <= 0 {
+		c.AutoUpdate.CheckIntervalHours = 24
 	}
 
 	return &c, nil

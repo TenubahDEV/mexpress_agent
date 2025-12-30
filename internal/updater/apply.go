@@ -6,21 +6,29 @@ import (
 	"os"
 )
 
-func ApplyUpdate(url string) error {
-	exe, err := os.Executable()
-	if err != nil {
+func Apply(url, sigURL string) error {
+	exe, _ := os.Executable()
+	tmp := exe + ".new"
+	sig := tmp + ".sig"
+
+	download(url, tmp)
+	download(sigURL, sig)
+
+	if err := VerifySignature(tmp, sig); err != nil {
 		return err
 	}
 
-	tmp := exe + ".new"
+	return os.Rename(tmp, exe)
+}
 
+func download(url, path string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	out, err := os.Create(tmp)
+	out, err := os.Create(path)
 	if err != nil {
 		return err
 	}
@@ -30,5 +38,5 @@ func ApplyUpdate(url string) error {
 		return err
 	}
 
-	return os.Rename(tmp, exe)
+	return nil
 }

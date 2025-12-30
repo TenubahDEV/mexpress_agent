@@ -16,3 +16,6 @@ bin/
 # Config local (no subir tokens)
 config.yaml
 *.local.yaml
+
+# Keys
+*.pem

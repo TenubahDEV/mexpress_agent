@@ -10,35 +10,48 @@ import (
 type Release struct {
 	TagName string `json:"tag_name"`
 	Assets  []struct {
-		Name               string `json:"name"`
-		BrowserDownloadURL string `json:"browser_download_url"`
+		Name string `json:"name"`
+		URL  string `json:"browser_download_url"`
 	} `json:"assets"`
 }
 
-func CheckLatest(current string) (string, string, error) {
+func CheckLatest(current string) (string, string, string, error) {
 	resp, err := http.Get("https://api.github.com/repos/TenubahDEV/tenubah-agent/releases/latest")
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	defer resp.Body.Close()
 
 	var r Release
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	if r.TagName == current {
-		return "", "", nil
+		return "", "", "", nil
 	}
 
-	binName := binaryName()
+	expected := binaryName()
+	expectedSig := expected + ".sig"
+	var binURL, sigURL string
+
 	for _, a := range r.Assets {
-		if a.Name == binName {
-			return r.TagName, a.BrowserDownloadURL, nil
+		if a.Name == expected {
+			binURL = a.URL
+		}
+		if a.Name == expectedSig {
+			sigURL = a.URL
 		}
 	}
 
-	return "", "", fmt.Errorf("binary not found for %s", binName)
+	if binURL == "" {
+		return "", "", "", fmt.Errorf("binary %s not found", expected)
+	}
+	if sigURL == "" {
+		return "", "", "", fmt.Errorf("signature %s not found", expectedSig)
+	}
+
+	return r.TagName, binURL, sigURL, nil
 }
 
 func binaryName() string {

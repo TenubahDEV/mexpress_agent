@@ -32,9 +32,27 @@ jobs:
                     -o dist/tenubah-agent-windows-amd64.exe \
                     ./cmd/tenubah-agent
 
+            - name: Write signing key
+              run: |
+                  echo "${{ secrets.TENUBAH_SIGNING_KEY }}" > signing_key.pem
+
+            - name: Sign Linux binary
+              run: |
+                  openssl dgst -sha256 -sign signing_key.pem \
+                    dist/tenubah-agent-linux-amd64 \
+                    > dist/tenubah-agent-linux-amd64.sig
+
+            - name: Sign Windows binary
+              run: |
+                  openssl dgst -sha256 -sign signing_key.pem \
+                    dist/tenubah-agent-windows-amd64.exe \
+                    > dist/tenubah-agent-windows-amd64.exe.sig
+
             - name: Create Release
               uses: softprops/action-gh-release@v2
               with:
                   files: |
                       dist/tenubah-agent-linux-amd64
+                      dist/tenubah-agent-linux-amd64.sig
                       dist/tenubah-agent-windows-amd64.exe
+                      dist/tenubah-agent-windows-amd64.exe.sig

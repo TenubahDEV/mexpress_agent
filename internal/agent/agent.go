@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"log"
 	"os"
 
 	"github.com/TenubahDEV/tenubah-agent/internal/collectors"
@@ -92,12 +93,26 @@ func (a *Agent) Interval() int {
 }
 
 func (a *Agent) CheckUpdate() {
-	newVer, url, err := updater.CheckLatest(version.Version)
+	if !a.cfg.AutoUpdate.Enabled {
+		return
+	}
+
+	newVer, url, sigURL, err := updater.CheckLatest(version.Version)
 	if err != nil || newVer == "" {
 		return
 	}
 
-	if err := updater.ApplyUpdate(url); err == nil {
-		os.Exit(0) // el service manager lo levanta de nuevo
+	log.Println("Auto-update: upgrading to", newVer)
+
+	if err := updater.Apply(url, sigURL); err == nil {
+		os.Exit(0) // service manager lo reinicia
 	}
+}
+
+func (a *Agent) AutoUpdateEnabled() bool {
+	return a.cfg.AutoUpdate.Enabled
+}
+
+func (a *Agent) UpdateInterval() int {
+	return a.cfg.AutoUpdate.CheckIntervalHours
 }
