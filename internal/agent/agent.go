@@ -8,6 +8,9 @@ import (
 	"github.com/TenubahDEV/tenubah-agent/internal/pusher"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/TenubahDEV/tenubah-agent/internal/updater"
+	"github.com/TenubahDEV/tenubah-agent/internal/version"
 )
 
 type Agent struct {
@@ -81,8 +84,20 @@ func (a *Agent) RunOnce() error {
 		a.cfg.Labels,
 		reg,
 	)
+
 }
 
 func (a *Agent) Interval() int {
 	return a.cfg.IntervalSeconds
+}
+
+func (a *Agent) CheckUpdate() {
+	newVer, url, err := updater.CheckLatest(version.Version)
+	if err != nil || newVer == "" {
+		return
+	}
+
+	if err := updater.ApplyUpdate(url); err == nil {
+		os.Exit(0) // el service manager lo levanta de nuevo
+	}
 }
