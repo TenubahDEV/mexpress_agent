@@ -70,13 +70,13 @@ jobs:
           CLIENT="${{ secrets.TENUBAH_CLIENT }}"
 
           aws s3 cp dist/tenubah-agent-linux-amd64 \
-            s3://install.tenubah.com/${CLIENT}/bin/tenubah-agent-linux-amd64
+            s3://tenubah-install/${CLIENT}/bin/tenubah-agent-linux-amd64
 
           aws s3 cp dist/tenubah-agent-linux-amd64.sig \
-            s3://install.tenubah.com/${CLIENT}/bin/tenubah-agent-linux-amd64.sig
+            s3://tenubah-install/${CLIENT}/bin/tenubah-agent-linux-amd64.sig
 
           aws s3 cp dist/tenubah-agent-windows-amd64.exe \
-            s3://install.tenubah.com/${CLIENT}/bin/tenubah-agent-windows-amd64.exe
+            s3://tenubah-install/${CLIENT}/bin/tenubah-agent-windows-amd64.exe
 
           aws s3 cp dist/tenubah-agent-windows-amd64.exe.sig \
-            s3://install.tenubah.com/${CLIENT}/bin/tenubah-agent-windows-amd64.exe.sig
+            s3://tenubah-install/${CLIENT}/bin/tenubah-agent-windows-amd64.exe.sig
