@@ -42,12 +42,21 @@ sudo curl -fL \
 sudo chmod +x "$BIN"
 
 ########################################
-# (Opcional pero recomendado)
-# Validar que el binario sea ELF
+# 🔍 DEBUG CRÍTICO (NO QUITAR)
 ########################################
 
-if ! file "$BIN" | grep -q "ELF"; then
-  echo "❌ El archivo descargado no es un binario ELF válido"
+echo "================ DEBUG BINARIO ================="
+sudo ls -lh "$BIN"
+sudo file "$BIN"
+sudo head -n 5 "$BIN" || true
+echo "================================================"
+
+########################################
+# VALIDACIÓN BINARIO
+########################################
+
+if ! sudo file "$BIN" | grep -q "ELF"; then
+  echo "❌ El archivo descargado NO es un binario ELF válido"
   exit 1
 fi
 

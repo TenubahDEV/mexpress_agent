@@ -50,9 +50,37 @@ func (a *Agent) RunOnce() error {
 		Name: "tenubah_memory_used_mb",
 		Help: "Used memory in MB",
 	})
-	disk := prometheus.NewGauge(prometheus.GaugeOpts{
+	memPercent := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_memory_usage_percent",
+		Help: "Memory usage percentage",
+	})
+	swapTotal := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_swap_total_mb",
+		Help: "Swap total in MB",
+	})
+	swapUsed := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_swap_used_mb",
+		Help: "Swap used in MB",
+	})
+	diskTotal := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_disk_total_gb",
+		Help: "Disk total in GB",
+	})
+	diskUsed := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_disk_used_gb",
+		Help: "Disk used in GB",
+	})
+	diskPercent := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "tenubah_disk_usage_percent",
 		Help: "Disk usage percent",
+	})
+	netRx := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_net_rx_bytes",
+		Help: "Network RX bytes",
+	})
+	netTx := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_net_tx_bytes",
+		Help: "Network TX bytes",
 	})
 	uptime := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "tenubah_uptime_seconds",
@@ -62,16 +90,46 @@ func (a *Agent) RunOnce() error {
 		Name: "tenubah_load1",
 		Help: "Load average 1m",
 	})
+	users := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_logged_in_users",
+		Help: "Number of logged in users",
+	})
+	procsTotal := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_processes_total",
+		Help: "Total number of processes",
+	})
+	procsRunning := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_processes_running",
+		Help: "Number of running processes",
+	})
 
 	// Registrar SIEMPRE
-	reg.MustRegister(cpu, mem, disk, uptime, load1)
+	reg.MustRegister(
+		cpu,
+		mem, memPercent,
+		swapTotal, swapUsed,
+		diskTotal, diskUsed, diskPercent,
+		netRx, netTx,
+		uptime, load1,
+		users, procsTotal, procsRunning,
+	)
 
 	// Set values
 	cpu.Set(m.CPU)
 	mem.Set(m.MemUsed)
-	disk.Set(m.DiskUsedPercent)
+	memPercent.Set(m.MemUsedPercent)
+	swapTotal.Set(m.SwapTotal)
+	swapUsed.Set(m.SwapUsed)
+	diskTotal.Set(m.DiskTotal)
+	diskUsed.Set(m.DiskUsed)
+	diskPercent.Set(m.DiskUsedPercent)
+	netRx.Set(float64(m.RxBytes))
+	netTx.Set(float64(m.TxBytes))
 	uptime.Set(float64(m.Uptime))
 	load1.Set(m.Load1)
+	users.Set(float64(m.LoggedInUsers))
+	procsTotal.Set(float64(m.TotalProcesses))
+	procsRunning.Set(float64(m.RunningProcesses))
 
 	pc := pusher.Client{
 		URL:   a.cfg.PushgatewayURL,
