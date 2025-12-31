@@ -102,7 +102,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	log.Printf("Tenubah Agent starting, version=%s", version.Version)
 	ag := agent.New(cfg)
 
 	svcConfig := &service.Config{
