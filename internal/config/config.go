@@ -9,7 +9,7 @@ import (
 
 type AutoUpdateConfig struct {
 	Enabled            bool `yaml:"enabled"`
-	CheckIntervalHours int  `yaml:"check_interval_hours"`
+	CheckIntervalHours float64 `yaml:"check_interval_hours"`
 }
 
 type Config struct {

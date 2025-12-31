@@ -67,13 +67,18 @@ func (p *program) metricsLoop() {
 }
 
 func (p *program) updateLoop() {
+
+	log.Printf("auto-update enabled=%v interval=%v hours",
+		p.agent.AutoUpdateEnabled(),
+		p.agent.UpdateInterval(),
+	)
 	if !p.agent.AutoUpdateEnabled() {
 		return
 	}
 
-	ticker := time.NewTicker(
-		time.Duration(p.agent.UpdateInterval()) * time.Hour,
-	)
+	interval := time.Duration(float64(time.Hour) * p.agent.UpdateInterval())
+	ticker := time.NewTicker(interval)
+
 	defer ticker.Stop()
 
 	for {
@@ -81,6 +86,7 @@ func (p *program) updateLoop() {
 		case <-p.quit:
 			return
 		case <-ticker.C:
+			log.Println("auto-update: checking for updates")
 			p.agent.CheckUpdate()
 		}
 	}

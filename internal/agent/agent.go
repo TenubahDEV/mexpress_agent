@@ -171,6 +171,6 @@ func (a *Agent) AutoUpdateEnabled() bool {
 	return a.cfg.AutoUpdate.Enabled
 }
 
-func (a *Agent) UpdateInterval() int {
+func (a *Agent) UpdateInterval() float64 {
 	return a.cfg.AutoUpdate.CheckIntervalHours
 }
