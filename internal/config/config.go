@@ -9,7 +9,7 @@ import (
 )
 
 type AutoUpdateConfig struct {
-	Enabled            bool `yaml:"enabled"`
+	Enabled            bool    `yaml:"enabled"`
 	CheckIntervalHours float64 `yaml:"check_interval_hours"`
 }
 
@@ -42,7 +42,7 @@ func Load(path string) (*Config, error) {
 		c.PushgatewayURL = v
 	}
 
-	c.Token = strings.TrimSpace(c.Token)
+	c.Token = strings.TrimSpace(strings.TrimPrefix(c.Token, "Bearer "))
 	c.PushgatewayURL = strings.TrimSpace(c.PushgatewayURL)
 
 	if c.IntervalSeconds <= 0 {

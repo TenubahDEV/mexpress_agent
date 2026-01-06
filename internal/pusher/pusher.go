@@ -3,6 +3,7 @@ package pusher
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -73,11 +74,22 @@ func (c Client) PushGatherer(
 	req.Header.Set("Content-Type", "text/plain; version=0.0.4")
 	req.Header.Set("Authorization", "Bearer "+c.Token)
 
+	// Log para debug token (temporal/diagnóstico)
+	maskedToken := ""
+	if len(c.Token) > 6 {
+		maskedToken = c.Token[:6] + "..."
+	}
+	log.Printf("Pushing to %s | Auth: Bearer %s", u, maskedToken)
+
 	// Log para debug
 	// log.Printf("Pushing metrics to %s", u)
 
 	// 7. Enviar
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			ForceAttemptHTTP2: false,
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
