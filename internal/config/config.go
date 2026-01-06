@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -40,6 +41,9 @@ func Load(path string) (*Config, error) {
 	if v := os.Getenv("TENUBAH_PUSH_URL"); v != "" {
 		c.PushgatewayURL = v
 	}
+
+	c.Token = strings.TrimSpace(c.Token)
+	c.PushgatewayURL = strings.TrimSpace(c.PushgatewayURL)
 
 	if c.IntervalSeconds <= 0 {
 		c.IntervalSeconds = 60
