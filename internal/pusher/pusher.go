@@ -2,6 +2,7 @@ package pusher
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -45,10 +46,11 @@ func (c Client) PushGatherer(
 
 	// 4. Construir URL (job + instance + labels)
 	// Path format: /metrics/job/<JOBNAME>/<LABEL_NAME>/<LABEL_VALUE>...
-	u := strings.TrimRight(c.URL, "/") + "/metrics/job/" + url.QueryEscape(job)
-	
+	// Usar PathEscape para segmentos de path
+	u := strings.TrimRight(c.URL, "/") + "/metrics/job/" + url.PathEscape(job)
+
 	// Agregar instance como grouping key
-	u += "/instance/" + url.QueryEscape(instance)
+	u += "/instance/" + url.PathEscape(instance)
 
 	// Agregar labels adicionales (Ordenados para consistencia)
 	keys := make([]string, 0, len(labels))
@@ -58,7 +60,7 @@ func (c Client) PushGatherer(
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		u += "/" + url.QueryEscape(k) + "/" + url.QueryEscape(labels[k])
+		u += "/" + url.PathEscape(k) + "/" + url.PathEscape(labels[k])
 	}
 
 	// 5. Crear Request HTTP
@@ -71,6 +73,9 @@ func (c Client) PushGatherer(
 	req.Header.Set("Content-Type", "text/plain; version=0.0.4")
 	req.Header.Set("Authorization", "Bearer "+c.Token)
 
+	// Log para debug
+	// log.Printf("Pushing metrics to %s", u)
+
 	// 7. Enviar
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -81,7 +86,8 @@ func (c Client) PushGatherer(
 
 	// 8. Validar respuesta
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("pushgateway returned status: %s", resp.Status)
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("pushgateway error: status=%s body=%s", resp.Status, string(body))
 	}
 
 	return nil

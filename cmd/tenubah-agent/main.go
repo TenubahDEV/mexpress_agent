@@ -60,7 +60,9 @@ func (p *program) metricsLoop() {
 		case <-p.quit:
 			return
 		default:
-			_ = p.agent.RunOnce()
+			if err := p.agent.RunOnce(); err != nil {
+				log.Printf("Error pushing metrics: %v", err)
+			}
 			time.Sleep(time.Duration(p.agent.Interval()) * time.Second)
 		}
 	}
