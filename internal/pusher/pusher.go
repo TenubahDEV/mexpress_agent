@@ -75,11 +75,12 @@ func (c Client) PushGatherer(
 	req.Header.Set("Authorization", "Bearer "+c.Token)
 
 	// Log para debug token (temporal/diagnóstico)
-	maskedToken := ""
-	if len(c.Token) > 6 {
-		maskedToken = c.Token[:6] + "..."
+	authHeader := req.Header.Get("Authorization")
+	maskedAuth := "Empty"
+	if len(authHeader) > 15 {
+		maskedAuth = authHeader[:15] + "..." + authHeader[len(authHeader)-5:]
 	}
-	log.Printf("Pushing to %s | Auth: Bearer %s", u, maskedToken)
+	log.Printf("Pushing to %s | Header: %s | TokenLen: %d", u, maskedAuth, len(c.Token))
 
 	// Log para debug
 	// log.Printf("Pushing metrics to %s", u)

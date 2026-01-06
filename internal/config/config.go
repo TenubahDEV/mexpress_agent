@@ -42,7 +42,14 @@ func Load(path string) (*Config, error) {
 		c.PushgatewayURL = v
 	}
 
-	c.Token = strings.TrimSpace(strings.TrimPrefix(c.Token, "Bearer "))
+	// Limpieza robusta del token
+	// 1. Quitar espacios extremos
+	// 2. Quitar prefijo "Bearer" (case sensitive, requiere espacio exacto o se ajusta)
+	// 3. Quitar espacios sobrantes de nuevo
+	t := strings.TrimSpace(c.Token)
+	t = strings.TrimPrefix(t, "Bearer ")
+	c.Token = strings.TrimSpace(t)
+
 	c.PushgatewayURL = strings.TrimSpace(c.PushgatewayURL)
 
 	if c.IntervalSeconds <= 0 {
