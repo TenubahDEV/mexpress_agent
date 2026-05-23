@@ -5,7 +5,7 @@ set -euo pipefail
 # CONFIGURACIÓN GENERAL
 ########################################
 
-CLIENT="dev"
+CLIENT="mexpress"
 BASE_URL="https://install.tenubah.com/${CLIENT}"
 
 INSTALL_DIR="/opt/tenubah-agent"
@@ -67,9 +67,9 @@ fi
 echo "📝 Creando configuración..."
 
 sudo tee "$CONFIG_DIR/config.yaml" > /dev/null <<EOF
-job_name: "tenubah_agent"
+job_name: "mexpress_agent"
 instance_name: ""
-pushgateway_url: "https://push.tenubah.com"
+pushgateway_url: "https://push.mexpress.tenubah.com"
 token: "$TENUBAH_TOKEN"
 interval_seconds: 60
 

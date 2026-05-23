@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 # CONFIGURACIÓN GENERAL
 ########################################
 
-$Client     = "dev"
+$Client     = "mexpress"
 $BaseUrl    = "https://install.tenubah.com/$Client"
 
 $InstallDir = "C:\Program Files\TenubahAgent"
@@ -58,9 +58,9 @@ if ($FileInfo.Length -lt 1MB) {
 Write-Host "📝 Creando configuración..."
 
 @"
-job_name: "tenubah_agent"
+job_name: "mexpress_agent"
 instance_name: ""
-pushgateway_url: "https://push.tenubah.com"
+pushgateway_url: "https://push.mexpress.tenubah.com"
 token: "$($env:TENUBAH_TOKEN)"
 interval_seconds: 60
 

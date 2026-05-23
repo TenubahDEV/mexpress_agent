@@ -1,9 +1,9 @@
-job_name: "cliente_tenubah"
+job_name: "mexpress_agent"
 instance_name: ""
-pushgateway_url: "https://push.tenubah.com"
+pushgateway_url: "https://push.mexpress.tenubah.com"
 token: "REPLACE_ME"
 interval_seconds: 60
 
 labels:
-  customer: "cliente1"
+  customer: "mexpress"
   env: "prod"
