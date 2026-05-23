@@ -138,8 +138,10 @@ func (a *Agent) RunOnce() error {
 	heartbeat.Set(1)
 
 	pc := pusher.Client{
-		URL:   a.cfg.PushgatewayURL,
-		Token: a.cfg.Token,
+		URL:      a.cfg.PushgatewayURL,
+		Token:    a.cfg.Token,
+		Username: a.cfg.Username,
+		Password: a.cfg.Password,
 	}
 
 	// 🔥 Push usando Gatherer

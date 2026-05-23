@@ -16,8 +16,8 @@ $SigPath    = "$BinPath.sig"
 # VALIDACIONES
 ########################################
 
-if (-not $env:TENUBAH_TOKEN) {
-    Write-Host "❌ TENUBAH_TOKEN no definido"
+if (-not $env:TENUBAH_TOKEN -and (-not $env:TENUBAH_USER -or -not $env:TENUBAH_PASSWORD)) {
+    Write-Host "❌ Debes definir TENUBAH_TOKEN o bien ambos TENUBAH_USER y TENUBAH_PASSWORD"
     exit 1
 }
 
@@ -62,6 +62,8 @@ job_name: "mexpress_agent"
 instance_name: ""
 pushgateway_url: "https://push.mexpress.tenubah.com"
 token: "$($env:TENUBAH_TOKEN)"
+username: "$($env:TENUBAH_USER)"
+password: "$($env:TENUBAH_PASSWORD)"
 interval_seconds: 60
 
 auto_update:

@@ -14,8 +14,10 @@ import (
 )
 
 type Client struct {
-	URL   string
-	Token string
+	URL      string
+	Token    string
+	Username string
+	Password string
 }
 
 // Push usando Gatherer (FORMA CORRECTA PARA PUSHGATEWAY)
@@ -72,15 +74,22 @@ func (c Client) PushGatherer(
 
 	// 6. Headers obligatorios
 	req.Header.Set("Content-Type", "text/plain; version=0.0.4")
-	req.Header.Set("Authorization", "Bearer "+c.Token)
+	if c.Username != "" && c.Password != "" {
+		req.SetBasicAuth(c.Username, c.Password)
+	} else if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
 
 	// Log para debug token (temporal/diagnóstico)
-	// Log para debug token (temporal/diagnóstico)
-	maskedToken := ""
-	if len(c.Token) > 6 {
-		maskedToken = c.Token[:6] + "..." + c.Token[len(c.Token)-4:]
+	if c.Username != "" && c.Password != "" {
+		log.Printf("Pushing to %s | Auth: Basic (user=%s)", u, c.Username)
+	} else {
+		maskedToken := ""
+		if len(c.Token) > 6 {
+			maskedToken = c.Token[:6] + "..." + c.Token[len(c.Token)-4:]
+		}
+		log.Printf("Pushing to %s | Auth: Bearer %s", u, maskedToken)
 	}
-	log.Printf("Pushing to %s | Auth: Bearer %s", u, maskedToken)
 
 	// Log para debug
 	// log.Printf("Pushing metrics to %s", u)

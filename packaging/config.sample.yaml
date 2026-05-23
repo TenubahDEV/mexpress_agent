@@ -1,8 +1,12 @@
 job_name: "mexpress_agent"
 instance_name: ""
 pushgateway_url: "https://push.mexpress.tenubah.com"
-token: "REPLACE_ME"
 interval_seconds: 60
+
+# Usa TOKEN o bien USERNAME/PASSWORD para autenticación
+token: ""
+username: "mexpress"
+password: "REPLACE_WITH_YOUR_BASIC_AUTH_PASSWORD"
 
 labels:
   customer: "mexpress"

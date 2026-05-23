@@ -18,6 +18,8 @@ type Config struct {
 	InstanceName    string            `yaml:"instance_name"`
 	PushgatewayURL  string            `yaml:"pushgateway_url"`
 	Token           string            `yaml:"token"`
+	Username        string            `yaml:"username"`
+	Password        string            `yaml:"password"`
 	IntervalSeconds int               `yaml:"interval_seconds"`
 	Labels          map[string]string `yaml:"labels"`
 	AutoUpdate      AutoUpdateConfig  `yaml:"auto_update"`
@@ -41,6 +43,12 @@ func Load(path string) (*Config, error) {
 	if v := os.Getenv("TENUBAH_PUSH_URL"); v != "" {
 		c.PushgatewayURL = v
 	}
+	if v := os.Getenv("TENUBAH_USER"); v != "" {
+		c.Username = v
+	}
+	if v := os.Getenv("TENUBAH_PASSWORD"); v != "" {
+		c.Password = v
+	}
 
 	// Limpieza robusta del token
 	// 1. Quitar espacios extremos
@@ -50,6 +58,8 @@ func Load(path string) (*Config, error) {
 	t = strings.TrimPrefix(t, "Bearer ")
 	c.Token = strings.TrimSpace(t)
 
+	c.Username = strings.TrimSpace(c.Username)
+	c.Password = strings.TrimSpace(c.Password)
 	c.PushgatewayURL = strings.TrimSpace(c.PushgatewayURL)
 
 	if c.IntervalSeconds <= 0 {
@@ -65,8 +75,8 @@ func Load(path string) (*Config, error) {
 	if c.PushgatewayURL == "" {
 		return nil, errors.New("pushgateway_url required")
 	}
-	if c.Token == "" {
-		return nil, errors.New("token required")
+	if c.Token == "" && (c.Username == "" || c.Password == "") {
+		return nil, errors.New("either token or username/password required")
 	}
 	if c.AutoUpdate.CheckIntervalHours <= 0 {
 		c.AutoUpdate.CheckIntervalHours = 24

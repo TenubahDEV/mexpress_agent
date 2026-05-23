@@ -17,8 +17,8 @@ SIG="${BIN}.sig"
 # VALIDACIONES
 ########################################
 
-if [ -z "${TENUBAH_TOKEN:-}" ]; then
-  echo "❌ TENUBAH_TOKEN no definido"
+if [ -z "${TENUBAH_TOKEN:-}" ] && ( [ -z "${TENUBAH_USER:-}" ] || [ -z "${TENUBAH_PASSWORD:-}" ] ); then
+  echo "❌ Debes definir TENUBAH_TOKEN o bien ambos TENUBAH_USER y TENUBAH_PASSWORD"
   exit 1
 fi
 
@@ -70,7 +70,9 @@ sudo tee "$CONFIG_DIR/config.yaml" > /dev/null <<EOF
 job_name: "mexpress_agent"
 instance_name: ""
 pushgateway_url: "https://push.mexpress.tenubah.com"
-token: "$TENUBAH_TOKEN"
+token: "${TENUBAH_TOKEN:-}"
+username: "${TENUBAH_USER:-}"
+password: "${TENUBAH_PASSWORD:-}"
 interval_seconds: 60
 
 auto_update:
