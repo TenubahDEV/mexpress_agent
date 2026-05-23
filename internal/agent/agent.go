@@ -4,14 +4,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/TenubahDEV/tenubah-agent/internal/collectors"
-	"github.com/TenubahDEV/tenubah-agent/internal/config"
-	"github.com/TenubahDEV/tenubah-agent/internal/pusher"
+	"github.com/TenubahDEV/mexpress_agent/internal/collectors"
+	"github.com/TenubahDEV/mexpress_agent/internal/config"
+	"github.com/TenubahDEV/mexpress_agent/internal/pusher"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/TenubahDEV/tenubah-agent/internal/updater"
-	"github.com/TenubahDEV/tenubah-agent/internal/version"
+	"github.com/TenubahDEV/mexpress_agent/internal/updater"
+	"github.com/TenubahDEV/mexpress_agent/internal/version"
 )
 
 type Agent struct {

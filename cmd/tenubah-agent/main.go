@@ -9,9 +9,9 @@ import (
 
 	"github.com/kardianos/service"
 
-	"github.com/TenubahDEV/tenubah-agent/internal/agent"
-	"github.com/TenubahDEV/tenubah-agent/internal/config"
-	"github.com/TenubahDEV/tenubah-agent/internal/version"
+	"github.com/TenubahDEV/mexpress_agent/internal/agent"
+	"github.com/TenubahDEV/mexpress_agent/internal/config"
+	"github.com/TenubahDEV/mexpress_agent/internal/version"
 )
 
 type program struct {

@@ -1,4 +1,4 @@
-module github.com/TenubahDEV/tenubah-agent
+module github.com/TenubahDEV/mexpress_agent
 
 go 1.25.5
 

@@ -16,7 +16,7 @@ type Release struct {
 }
 
 func CheckLatest(current string) (string, string, string, error) {
-	resp, err := http.Get("https://api.github.com/repos/TenubahDEV/tenubah-agent/releases/latest")
+	resp, err := http.Get("https://api.github.com/repos/TenubahDEV/mexpress_agent/releases/latest")
 	if err != nil {
 		return "", "", "", err
 	}

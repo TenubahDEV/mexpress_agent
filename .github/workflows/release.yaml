@@ -28,13 +28,13 @@ jobs:
         run: |
           mkdir -p dist
           GOOS=linux GOARCH=amd64 go build \
-            -ldflags "-s -w -X github.com/TenubahDEV/tenubah-agent/internal/version.Version=${VERSION}" \
+            -ldflags "-s -w -X github.com/TenubahDEV/mexpress_agent/internal/version.Version=${VERSION}" \
             -o dist/tenubah-agent-linux-amd64 ./cmd/tenubah-agent
 
       - name: Build Windows binary
         run: |
           GOOS=windows GOARCH=amd64 go build \
-            -ldflags "-s -w -X github.com/TenubahDEV/tenubah-agent/internal/version.Version=${VERSION}" \
+            -ldflags "-s -w -X github.com/TenubahDEV/mexpress_agent/internal/version.Version=${VERSION}" \
             -o dist/tenubah-agent-windows-amd64.exe ./cmd/tenubah-agent
 
       - name: Write signing key
