@@ -80,3 +80,10 @@ jobs:
 
           aws s3 cp dist/tenubah-agent-windows-amd64.exe.sig \
             s3://tenubah-install/${CLIENT}/bin/tenubah-agent-windows-amd64.exe.sig
+
+          # Subir los instaladores de Linux y Windows a sus respectivas carpetas
+          aws s3 cp packaging/linux/install.sh \
+            s3://tenubah-install/${CLIENT}/linux/install.sh
+
+          aws s3 cp packaging/windows/install.ps1 \
+            s3://tenubah-install/${CLIENT}/windows/install.ps1
