@@ -2,6 +2,7 @@ package collectors
 
 import (
 	"context"
+	"log"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -42,30 +43,43 @@ type Metrics struct {
 }
 
 func getLoggedInUsersCount(ctx context.Context) int {
-	// Intento principal usando gopsutil
+	// 1. Intento principal usando gopsutil
 	users, err := host.UsersWithContext(ctx)
-	if err == nil && len(users) > 0 {
+	if err != nil {
+		log.Printf("[DEBUG] gopsutil host.Users error: %v", err)
+	} else if len(users) > 0 {
 		return len(users)
 	}
 
-	// Fallback para Linux/Unix/macOS usando el comando "who"
+	// 2. Fallback para Linux/Unix/macOS usando el comando "who"
 	if runtime.GOOS != "windows" {
 		cmd := exec.CommandContext(ctx, "who")
-		output, err := cmd.Output()
-		if err == nil {
-			lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-			count := 0
-			for _, line := range lines {
-				if strings.TrimSpace(line) != "" {
-					count++
-				}
-			}
-			return count
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Printf("[DEBUG] who command error: %v, output: %q", err, string(output))
+			return 0
 		}
-	} else {
-		// Fallback para Windows usando "query user"
-		cmd := exec.CommandContext(ctx, "query", "user")
-		output, err := cmd.Output()
+		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+		count := 0
+		for _, line := range lines {
+			if strings.TrimSpace(line) != "" {
+				count++
+			}
+		}
+		return count
+	}
+
+	// 3. Fallbacks para Windows
+	// Intentamos con "quser.exe" en diferentes rutas para evitar redirección de System32 (Sysnative)
+	quserPaths := []string{
+		"C:\\Windows\\System32\\quser.exe",
+		"C:\\Windows\\Sysnative\\quser.exe",
+		"quser.exe",
+	}
+
+	for _, p := range quserPaths {
+		cmd := exec.CommandContext(ctx, p)
+		output, err := cmd.CombinedOutput()
 		if err == nil {
 			lines := strings.Split(strings.TrimSpace(string(output)), "\n")
 			count := 0
@@ -75,9 +89,54 @@ func getLoggedInUsersCount(ctx context.Context) int {
 				}
 			}
 			if count > 1 {
+				log.Printf("[DEBUG] quser (%s) succeeded, count: %d", p, count-1)
 				return count - 1 // Restamos 1 por la cabecera
 			}
+		} else {
+			log.Printf("[DEBUG] quser (%s) failed: %v, output: %q", p, err, string(output))
 		}
+	}
+
+	// Si quser falla, probamos con "query user" (usando el PATH)
+	cmd := exec.CommandContext(ctx, "query", "user")
+	output, err = cmd.CombinedOutput()
+	if err == nil {
+		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+		count := 0
+		for _, line := range lines {
+			if strings.TrimSpace(line) != "" {
+				count++
+			}
+		}
+		if count > 1 {
+			log.Printf("[DEBUG] query user succeeded, count: %d", count-1)
+			return count - 1
+		}
+	} else {
+		log.Printf("[DEBUG] query user failed: %v, output: %q", err, string(output))
+	}
+
+	// Fallback de ultra-reserva para Windows: Contar instancias de "explorer.exe" ejecutándose
+	// Cada usuario interactivo logueado (Consola o RDP) tiene exactamente una instancia de explorer.exe corriendo.
+	// Si no hay usuarios logueados, el total es 0.
+	psCmd := exec.CommandContext(ctx, "powershell", "-NoProfile", "-Command", "@(Get-Process -Name explorer -ErrorAction SilentlyContinue).Count")
+	psOutput, psErr := psCmd.CombinedOutput()
+	if psErr == nil {
+		valStr := strings.TrimSpace(string(psOutput))
+		if len(valStr) > 0 {
+			var count int
+			for _, char := range valStr {
+				if char >= '0' && char <= '9' {
+					count = count*10 + int(char-'0')
+				}
+			}
+			if count > 0 {
+				log.Printf("[DEBUG] explorer process count fallback succeeded, count: %d", count)
+				return count
+			}
+		}
+	} else {
+		log.Printf("[DEBUG] powershell explorer query failed: %v, output: %q", psErr, string(psOutput))
 	}
 
 	return 0
