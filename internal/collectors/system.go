@@ -2,6 +2,9 @@ package collectors
 
 import (
 	"context"
+	"os/exec"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -38,6 +41,48 @@ type Metrics struct {
 	RunningProcesses int
 }
 
+func getLoggedInUsersCount(ctx context.Context) int {
+	// Intento principal usando gopsutil
+	users, err := host.UsersWithContext(ctx)
+	if err == nil && len(users) > 0 {
+		return len(users)
+	}
+
+	// Fallback para Linux/Unix/macOS usando el comando "who"
+	if runtime.GOOS != "windows" {
+		cmd := exec.CommandContext(ctx, "who")
+		output, err := cmd.Output()
+		if err == nil {
+			lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+			count := 0
+			for _, line := range lines {
+				if strings.TrimSpace(line) != "" {
+					count++
+				}
+			}
+			return count
+		}
+	} else {
+		// Fallback para Windows usando "query user"
+		cmd := exec.CommandContext(ctx, "query", "user")
+		output, err := cmd.Output()
+		if err == nil {
+			lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+			count := 0
+			for _, line := range lines {
+				if strings.TrimSpace(line) != "" {
+					count++
+				}
+			}
+			if count > 1 {
+				return count - 1 // Restamos 1 por la cabecera
+			}
+		}
+	}
+
+	return 0
+}
+
 func Collect(ctx context.Context) (*Metrics, error) {
 	cpuPerc, _ := cpu.PercentWithContext(ctx, 0, false)
 
@@ -47,14 +92,6 @@ func Collect(ctx context.Context) (*Metrics, error) {
 	netIO, _ := net.IOCountersWithContext(ctx, false)
 	hi, _ := host.InfoWithContext(ctx)
 	la, _ := load.AvgWithContext(ctx)
-	users, _ := host.UsersWithContext(ctx)
-
-	// Best effort for running processes (procs running / total)
-	// gopsutil host.Info returns Procs (total processes)
-	// distinguishing "Running" might need process iteration or load info.
-	// For now we will use 0 for RunningProcesses if easier, or check load.
-	// actually host.Info doesn't give "running".
-	// We'll stick to TotalProcesses from host.Info for now.
 
 	m := &Metrics{
 		CPU:             cpuPerc[0],
@@ -70,7 +107,7 @@ func Collect(ctx context.Context) (*Metrics, error) {
 		TxBytes:         netIO[0].BytesSent,
 		Uptime:          hi.Uptime,
 		Load1:           la.Load1,
-		LoggedInUsers:   len(users),
+		LoggedInUsers:   getLoggedInUsersCount(ctx),
 		TotalProcesses:  hi.Procs,
 	}
 
