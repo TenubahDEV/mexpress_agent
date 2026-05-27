@@ -80,10 +80,10 @@ labels:
 ########################################
 
 Write-Host "🛠️ Instalando servicio..."
-& $BinPath -config (Join-Path $ConfigDir "config.yaml") install
+& $BinPath -config (Join-Path $ConfigDir "config.yaml") install 2>&1
 
 Write-Host "▶️ Iniciando servicio..."
-& $BinPath start
+& $BinPath start 2>&1
 
 ########################################
 # FINAL
