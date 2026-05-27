@@ -3,6 +3,7 @@ package collectors
 import (
 	"context"
 	"log"
+	"net"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -13,7 +14,7 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
-	"github.com/shirou/gopsutil/v3/net"
+	netutil "github.com/shirou/gopsutil/v3/net"
 )
 
 type Metrics struct {
@@ -40,6 +41,11 @@ type Metrics struct {
 	LoggedInUsers    int
 	TotalProcesses   uint64
 	RunningProcesses int
+
+	IP             string
+	OS             string
+	Platform       string
+	PlatformVersion string
 }
 
 func getLoggedInUsersCount(ctx context.Context) int {
@@ -142,13 +148,28 @@ func getLoggedInUsersCount(ctx context.Context) int {
 	return 0
 }
 
+func getLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "unknown"
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return "unknown"
+}
+
 func Collect(ctx context.Context) (*Metrics, error) {
 	cpuPerc, _ := cpu.PercentWithContext(ctx, 0, false)
 
 	vm, _ := mem.VirtualMemoryWithContext(ctx)
 	sm, _ := mem.SwapMemoryWithContext(ctx)
 	du, _ := disk.UsageWithContext(ctx, "/")
-	netIO, _ := net.IOCountersWithContext(ctx, false)
+	netIO, _ := netutil.IOCountersWithContext(ctx, false)
 	hi, _ := host.InfoWithContext(ctx)
 	la, _ := load.AvgWithContext(ctx)
 
@@ -168,6 +189,10 @@ func Collect(ctx context.Context) (*Metrics, error) {
 		Load1:           la.Load1,
 		LoggedInUsers:   getLoggedInUsersCount(ctx),
 		TotalProcesses:  hi.Procs,
+		IP:              getLocalIP(),
+		OS:              hi.OS,
+		Platform:        hi.Platform,
+		PlatformVersion: hi.PlatformVersion,
 	}
 
 	return m, nil

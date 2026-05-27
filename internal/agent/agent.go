@@ -106,6 +106,17 @@ func (a *Agent) RunOnce() error {
 		Name: "tenubah_agent_heartbeat",
 		Help: "Agent heartbeat (always 1)",
 	})
+	info := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_agent_info",
+		Help: "Information about the agent and host system",
+		ConstLabels: prometheus.Labels{
+			"ip":               m.IP,
+			"os":               m.OS,
+			"platform":         m.Platform,
+			"platform_version": m.PlatformVersion,
+			"version":          version.Version,
+		},
+	})
 
 	// Registrar SIEMPRE
 	reg.MustRegister(
@@ -117,6 +128,7 @@ func (a *Agent) RunOnce() error {
 		uptime, load1,
 		users, procsTotal, procsRunning,
 		heartbeat,
+		info,
 	)
 
 	// Set values
@@ -136,6 +148,7 @@ func (a *Agent) RunOnce() error {
 	procsTotal.Set(float64(m.TotalProcesses))
 	procsRunning.Set(float64(m.RunningProcesses))
 	heartbeat.Set(1)
+	info.Set(1)
 
 	pc := pusher.Client{
 		URL:      a.cfg.PushgatewayURL,
