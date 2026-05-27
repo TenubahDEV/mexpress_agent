@@ -99,7 +99,7 @@ func getLoggedInUsersCount(ctx context.Context) int {
 
 	// Si quser falla, probamos con "query user" (usando el PATH)
 	cmd := exec.CommandContext(ctx, "query", "user")
-	output, err = cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
 	if err == nil {
 		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
 		count := 0
