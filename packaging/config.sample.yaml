@@ -11,3 +11,10 @@ password: "REPLACE_WITH_YOUR_BASIC_AUTH_PASSWORD"
 labels:
   customer: "mexpress"
   env: "prod"
+
+# Monitoreo de Bases de Datos (Opcional - Deshabilitado por defecto)
+database_monitoring:
+  enabled: false
+  type: "sqlserver"
+  connection_string: "sqlserver://sa:TuPasswordSeguro@localhost:1433?database=master"
+  collect_interval_seconds: 60

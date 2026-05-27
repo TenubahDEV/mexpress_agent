@@ -25,6 +25,10 @@ func (p *program) Start(s service.Service) error {
 	go p.metricsLoop()
 	go p.updateLoop()
 
+	if p.agent.DatabaseMonitoringEnabled() {
+		go p.agent.StartDatabaseMonitoring(p.quit)
+	}
+
 	return nil
 }
 

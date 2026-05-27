@@ -1,8 +1,10 @@
 package agent
 
 import (
+	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/TenubahDEV/mexpress_agent/internal/collectors"
 	"github.com/TenubahDEV/mexpress_agent/internal/config"
@@ -157,11 +159,18 @@ func (a *Agent) RunOnce() error {
 		Password: a.cfg.Password,
 	}
 
+	// Copiar etiquetas globales y añadir component: system para evitar colisión en Pushgateway
+	labels := make(map[string]string)
+	for k, v := range a.cfg.Labels {
+		labels[k] = v
+	}
+	labels["component"] = "system"
+
 	// 🔥 Push usando Gatherer
 	return pc.PushGatherer(
 		a.cfg.JobName,
 		a.instance(),
-		a.cfg.Labels,
+		labels,
 		reg,
 	)
 
@@ -194,4 +203,136 @@ func (a *Agent) AutoUpdateEnabled() bool {
 
 func (a *Agent) UpdateInterval() float64 {
 	return a.cfg.AutoUpdate.CheckIntervalHours
+}
+
+func (a *Agent) DatabaseMonitoringEnabled() bool {
+	return a.cfg.DatabaseMonitoring.Enabled
+}
+
+func (a *Agent) StartDatabaseMonitoring(quit chan struct{}) {
+	interval := time.Duration(a.cfg.DatabaseMonitoring.CollectIntervalSeconds) * time.Second
+	log.Printf("Starting database monitoring loop, type=%s, interval=%v", a.cfg.DatabaseMonitoring.Type, interval)
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	// Ejecutar inmediatamente al inicio
+	a.runDatabaseMonitoringOnce()
+
+	for {
+		select {
+		case <-quit:
+			collectors.Close() // cerrar conexiones abiertas al salir
+			return
+		case <-ticker.C:
+			a.runDatabaseMonitoringOnce()
+		}
+	}
+}
+
+func (a *Agent) runDatabaseMonitoringOnce() {
+	// Crear contexto con timeout de 10s para evitar bloqueos
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	m, err := collectors.CollectSQLServer(ctx, a.cfg.DatabaseMonitoring.ConnectionString)
+	if err != nil {
+		log.Printf("WARNING sqlserver: SQL Server collection returned errors: %v", err)
+	}
+
+	reg := prometheus.NewRegistry()
+
+	// 1. Métricas generales del motor
+	up := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_up",
+		Help: "SQL Server status (1 = UP, 0 = DOWN)",
+	})
+	userConns := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_user_connections",
+		Help: "Active SQL Server user connections",
+	})
+	dbCount := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_database_count",
+		Help: "Total databases in SQL Server",
+	})
+	failedJobs := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_failed_jobs_last_24h",
+		Help: "Failed SQL Agent jobs in the last 24 hours",
+	})
+
+	reg.MustRegister(up, userConns, dbCount, failedJobs)
+
+	up.Set(m.Up)
+	userConns.Set(m.UserConnections)
+	dbCount.Set(m.DatabaseCount)
+	failedJobs.Set(m.FailedJobsLast24h)
+
+	// 2. Métricas por base de datos (con etiqueta 'database')
+	dbStatus := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_database_status",
+		Help: "Database status (1 = ONLINE, 0 = NOT ONLINE)",
+	}, []string{"database"})
+
+	dbSize := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_database_size_mb",
+		Help: "Database size in MB",
+	}, []string{"database"})
+
+	dbLogSize := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_log_size_mb",
+		Help: "Log file size in MB",
+	}, []string{"database"})
+
+	dbLogUsed := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_log_used_percent",
+		Help: "Percentage of log file used",
+	}, []string{"database"})
+
+	dbFullBackup := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_last_full_backup_age_hours",
+		Help: "Hours since last successful full backup (-1 if never)",
+	}, []string{"database"})
+
+	dbDiffBackup := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_last_diff_backup_age_hours",
+		Help: "Hours since last successful differential backup (-1 if never)",
+	}, []string{"database"})
+
+	dbLogBackup := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "tenubah_sqlserver_last_log_backup_age_minutes",
+		Help: "Minutes since last successful transaction log backup (-1 if never)",
+	}, []string{"database"})
+
+	reg.MustRegister(dbStatus, dbSize, dbLogSize, dbLogUsed, dbFullBackup, dbDiffBackup, dbLogBackup)
+
+	// Cargar dinámicamente las bases de datos registradas
+	for _, db := range m.Databases {
+		dbStatus.WithLabelValues(db.Name).Set(db.Status)
+		dbSize.WithLabelValues(db.Name).Set(db.SizeMB)
+		dbLogSize.WithLabelValues(db.Name).Set(db.LogSizeMB)
+		dbLogUsed.WithLabelValues(db.Name).Set(db.LogUsedPercent)
+		dbFullBackup.WithLabelValues(db.Name).Set(db.LastFullBackupAgeHours)
+		dbDiffBackup.WithLabelValues(db.Name).Set(db.LastDiffBackupAgeHours)
+		dbLogBackup.WithLabelValues(db.Name).Set(db.LastLogBackupAgeMinutes)
+	}
+
+	// Cliente de push hacia Pushgateway
+	pc := pusher.Client{
+		URL:      a.cfg.PushgatewayURL,
+		Token:    a.cfg.Token,
+		Username: a.cfg.Username,
+		Password: a.cfg.Password,
+	}
+
+	labels := make(map[string]string)
+	for k, v := range a.cfg.Labels {
+		labels[k] = v
+	}
+	labels["component"] = "database"
+
+	if err := pc.PushGatherer(a.cfg.JobName, a.instance(), labels, reg); err != nil {
+		log.Printf("ERROR sqlserver: Failed to push SQL Server metrics to Pushgateway: %v", err)
+	} else {
+		log.Printf("Successfully pushed SQL Server metrics to Pushgateway")
+	}
 }

@@ -13,16 +13,24 @@ type AutoUpdateConfig struct {
 	CheckIntervalHours float64 `yaml:"check_interval_hours"`
 }
 
+type DatabaseMonitoringConfig struct {
+	Enabled                bool   `yaml:"enabled"`
+	Type                   string `yaml:"type"`
+	ConnectionString       string `yaml:"connection_string"`
+	CollectIntervalSeconds int    `yaml:"collect_interval_seconds"`
+}
+
 type Config struct {
-	JobName         string            `yaml:"job_name"`
-	InstanceName    string            `yaml:"instance_name"`
-	PushgatewayURL  string            `yaml:"pushgateway_url"`
-	Token           string            `yaml:"token"`
-	Username        string            `yaml:"username"`
-	Password        string            `yaml:"password"`
-	IntervalSeconds int               `yaml:"interval_seconds"`
-	Labels          map[string]string `yaml:"labels"`
-	AutoUpdate      AutoUpdateConfig  `yaml:"auto_update"`
+	JobName            string                   `yaml:"job_name"`
+	InstanceName       string                   `yaml:"instance_name"`
+	PushgatewayURL     string                   `yaml:"pushgateway_url"`
+	Token              string                   `yaml:"token"`
+	Username           string                   `yaml:"username"`
+	Password           string                   `yaml:"password"`
+	IntervalSeconds    int                      `yaml:"interval_seconds"`
+	Labels             map[string]string        `yaml:"labels"`
+	AutoUpdate         AutoUpdateConfig         `yaml:"auto_update"`
+	DatabaseMonitoring DatabaseMonitoringConfig `yaml:"database_monitoring"`
 }
 
 func Load(path string) (*Config, error) {
@@ -48,6 +56,12 @@ func Load(path string) (*Config, error) {
 	}
 	if v := os.Getenv("TENUBAH_PASSWORD"); v != "" {
 		c.Password = v
+	}
+	if v := os.Getenv("TENUBAH_DB_CONN"); v != "" {
+		c.DatabaseMonitoring.ConnectionString = v
+	}
+	if v := os.Getenv("TENUBAH_DB_TYPE"); v != "" {
+		c.DatabaseMonitoring.Type = v
 	}
 
 	// Limpieza robusta del token
@@ -80,6 +94,24 @@ func Load(path string) (*Config, error) {
 	}
 	if c.AutoUpdate.CheckIntervalHours <= 0 {
 		c.AutoUpdate.CheckIntervalHours = 24
+	}
+
+	if c.DatabaseMonitoring.Enabled {
+		c.DatabaseMonitoring.Type = strings.TrimSpace(strings.ToLower(c.DatabaseMonitoring.Type))
+		c.DatabaseMonitoring.ConnectionString = strings.TrimSpace(c.DatabaseMonitoring.ConnectionString)
+
+		if c.DatabaseMonitoring.Type == "" {
+			return nil, errors.New("database_monitoring.type is required when enabled")
+		}
+		if c.DatabaseMonitoring.Type != "sqlserver" {
+			return nil, errors.New("database_monitoring.type must be 'sqlserver'")
+		}
+		if c.DatabaseMonitoring.ConnectionString == "" {
+			return nil, errors.New("database_monitoring.connection_string is required when enabled")
+		}
+		if c.DatabaseMonitoring.CollectIntervalSeconds <= 0 {
+			c.DatabaseMonitoring.CollectIntervalSeconds = 60
+		}
 	}
 
 	return &c, nil

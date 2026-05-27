@@ -6,6 +6,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/shirou/gopsutil/v3 v3.24.5
 	gopkg.in/yaml.v3 v3.0.1
+	github.com/microsoft/go-mssqldb v1.8.0
 )
 
 require (
