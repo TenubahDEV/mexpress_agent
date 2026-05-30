@@ -186,15 +186,23 @@ func (a *Agent) CheckUpdate() {
 	}
 
 	newVer, url, sigURL, err := updater.CheckLatest(version.Version)
-	if err != nil || newVer == "" {
+	if err != nil {
+		log.Printf("Auto-update error checking latest release: %v", err)
+		return
+	}
+	if newVer == "" {
 		return
 	}
 
 	log.Println("Auto-update: upgrading to", newVer)
 
-	if err := updater.Apply(url, sigURL); err == nil {
-		os.Exit(0) // service manager lo reinicia
+	if err := updater.Apply(url, sigURL); err != nil {
+		log.Printf("Auto-update error applying upgrade: %v", err)
+		return
 	}
+
+	log.Println("Auto-update: upgrade applied successfully, restarting agent...")
+	os.Exit(0) // service manager lo reinicia
 }
 
 func (a *Agent) AutoUpdateEnabled() bool {
