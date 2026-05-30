@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"os"
+	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/TenubahDEV/mexpress_agent/internal/collectors"
@@ -201,8 +203,24 @@ func (a *Agent) CheckUpdate() {
 		return
 	}
 
-	log.Println("Auto-update: upgrade applied successfully, restarting agent...")
-	os.Exit(0) // service manager lo reinicia
+	log.Println("Auto-update: upgrade applied successfully, restarting service...")
+	restartService()
+	os.Exit(0)
+}
+
+func restartService() {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		// En Windows usamos cmd para esperar 3 segundos (vía ping) y luego arrancar el servicio de forma asíncrona
+		cmd = exec.Command("cmd", "/c", "ping 127.0.0.1 -n 4 > nul && net start tenubah-agent")
+	} else {
+		// En Linux/Unix usamos sh para esperar 3 segundos y arrancar vía systemctl de forma asíncrona
+		cmd = exec.Command("sh", "-c", "sleep 3 && systemctl start tenubah-agent")
+	}
+	// Ejecutamos en segundo plano (detached) para que el actual proceso pueda terminar limpiamente
+	if err := cmd.Start(); err != nil {
+		log.Printf("Auto-update warning: failed to spawn service restart helper: %v", err)
+	}
 }
 
 func (a *Agent) AutoUpdateEnabled() bool {
